@@ -1,32 +1,12 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AeroChan</title>
-    <link rel="stylesheet" href="style.css">
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-</head>
-<body>
-
-    <div class="aero-container">
-        <header class="glass-panel">
-            <h1>AeroChan</h1>
-            <p>The Future is Clear & Glossy</p>
-        </header>
-
-        <div class="glass-panel form-container">
-            <h3>Start a New Thread</h3>
-            <input type="text" id="thread-subject" placeholder="Subject">
-            <textarea id="thread-content" placeholder="Comment"></textarea>
-            <button id="submit-btn" class="glossy-btn">Post Thread</button>
-        </div>
-
-        <div id="board-container">
-            <div class="loading">Loading AeroChan...</div>
-        </div>
-    </div>
-
-    <script src="script.js"></script>
-</body>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Global Chat</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
 </html>
