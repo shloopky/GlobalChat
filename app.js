@@ -48,7 +48,7 @@ const RomanForum = () => {
 
       user: 'Caesar Augustus',
 
-      content: 'The Senate has spoken! New reforms are coming. #Politics #Reform',
+      content: 'The Senate has spoken! New wigglers are coming. #Politics #Reform',
 
       hashtags: ['Politics', 'Reform'],
 
