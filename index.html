@@ -402,10 +402,14 @@
         });
 
         analyzeBtn.addEventListener('click', async function() {
-            const url = urlInput.value.trim();
+            let url = urlInput.value.trim();
             if (!url) {
                 alert('ERROR: NO URL PROVIDED');
                 return;
+            }
+            
+            if (!url.startsWith('http://') && !url.startsWith('https://')) {
+                url = 'https://' + url;
             }
 
             analyzeBtn.textContent = '◈ ANALYZING ◈';
