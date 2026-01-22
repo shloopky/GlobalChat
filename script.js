@@ -1,3 +1,7 @@
+// CONFIGURATION
+const SUPABASE_URL = "https://ghcvqapshprauuitzycb.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_l8L1joeMuf4VyAU2V00h9A_CLcsheub";
+
 // Initialize Lucide Icons
 lucide.createIcons();
 
@@ -9,7 +13,6 @@ const dangerLevels = [
     { label: 'APOLLYON', color: 'text-red-600', desc: 'Maximum chaos', hex: '#991b1b' }
 ];
 
-// Elements
 const urlInput = document.getElementById('urlInput');
 const dangerRange = document.getElementById('dangerRange');
 const dangerLabel = document.getElementById('dangerLabel');
@@ -18,35 +21,27 @@ const analyzeBtn = document.getElementById('analyzeBtn');
 const resultsArea = document.getElementById('resultsArea');
 const scanlines = document.getElementById('scanlines');
 
-// Setup Scanlines
+// Setup Scanlines UI
 for (let i = 0; i < 50; i++) {
     const line = document.createElement('div');
     line.className = 'scanline';
     scanlines.appendChild(line);
 }
 
-// Update UI based on range
 dangerRange.addEventListener('input', (e) => {
     const val = parseInt(e.target.value);
     const level = dangerLevels[val];
-    
     dangerLabel.textContent = level.label;
     dangerLabel.className = `text-2xl font-bold ${level.color}`;
     dangerDesc.textContent = level.desc;
-    
-    // Update slider background gradient
     const percentage = (val / 4) * 100;
     dangerRange.style.background = `linear-gradient(to right, ${level.hex} ${percentage}%, #292524 ${percentage}%)`;
 });
 
-// Main Analysis Logic
 async function analyzeSite() {
-    const url = urlInput.value;
+    const url = urlInput.value.trim();
     if (!url) return;
 
-    const danger = dangerRange.value;
-    
-    // Set UI to Loading State
     analyzeBtn.disabled = true;
     analyzeBtn.textContent = '⚠ ANALYZING ⚠';
     analyzeBtn.classList.add('animate-pulse', 'bg-yellow-900', 'text-yellow-200');
@@ -54,44 +49,34 @@ async function analyzeSite() {
     resultsArea.classList.add('hidden');
 
     try {
-        const response = await fetch("https://api.anthropic.com/v1/messages", {
+        const response = await fetch(`${SUPABASE_URL}/functions/v1/analyze-link`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
-                "x-api-key": "YOUR_API_KEY_HERE", // NOTE: Needs API Key
-                "anthropic-version": "2023-06-01",
-                "dangerously-allow-browser": "true" // For demo purposes only
+                "Authorization": `Bearer ${SUPABASE_ANON_KEY}`
             },
-            body: JSON.stringify({
-                model: "claude-3-sonnet-20240229",
-                max_tokens: 1000,
-                messages: [{
-                    role: "user",
-                    content: `Given this URL: "${url}", suggest 3 similar websites or links. Danger level: ${danger}/4. Respond ONLY with valid JSON: {"sites": [{"name": "Site Name", "url": "https://example.com", "reason": "Why"}], "classification": "DESC", "warning": "WARN"}`
-                }]
-            })
+            body: JSON.stringify({ url, danger: dangerRange.value })
         });
 
         const data = await response.json();
-        const text = data.content[0].text;
-        const parsed = JSON.parse(text);
-
+        // Extracting text from Anthropic response structure
+        const rawContent = data.content[0].text;
+        const parsed = JSON.parse(rawContent.replace(/```json|```/g, "").trim());
         renderResults(parsed);
     } catch (err) {
         console.error(err);
         renderResults({
             sites: [],
-            classification: "ERROR",
-            warning: "Analysis failed. Ensure API key is valid and URL is correct."
+            classification: "SYSTEM ERROR",
+            warning: "Function not found or API key missing in Supabase secrets."
         });
     } finally {
-        // Reset UI State
         setTimeout(() => {
             analyzeBtn.disabled = false;
             analyzeBtn.textContent = 'INITIATE ANALYSIS';
             analyzeBtn.classList.remove('animate-pulse', 'bg-yellow-900', 'text-yellow-200');
             scanlines.style.display = 'none';
-        }, 1000);
+        }, 1200);
     }
 }
 
@@ -100,26 +85,15 @@ function renderResults(data) {
     resultsArea.innerHTML = `
         <div class="mb-4 pb-4 border-b border-stone-800">
             <div class="text-xs text-stone-500 mb-1">CLASSIFICATION:</div>
-            <div class="text-green-400 font-bold">${data.classification}</div>
+            <div class="text-green-400 font-bold">${data.classification || "UNKNOWN"}</div>
         </div>
-        ${data.warning ? `
-            <div class="mb-6 p-4 bg-yellow-900/20 border border-yellow-700">
-                <div class="text-xs text-yellow-400 mb-1">⚠ WARNING:</div>
-                <div class="text-yellow-300 text-sm">${data.warning}</div>
-            </div>
-        ` : ''}
-        <div class="text-xs text-stone-500 mb-3">SIMILAR ENTITIES DETECTED:</div>
+        ${data.warning ? `<div class="mb-6 p-4 bg-yellow-900/20 border border-yellow-700 text-yellow-300 text-sm">${data.warning}</div>` : ''}
         <div class="space-y-4">
             ${data.sites.map((site, i) => `
-                <div class="border border-stone-800 p-4 hover:border-green-800 transition-colors">
-                    <div class="flex items-start justify-between mb-2">
-                        <div class="text-green-400 font-bold">SCP-████-${i + 1}</div>
-                        <div class="text-xs text-stone-600">INSTANCE ${i + 1}/3</div>
-                    </div>
-                    <div class="text-white mb-2">${site.name}</div>
-                    <a href="${site.url}" target="_blank" class="text-blue-400 hover:text-blue-300 text-sm break-all underline">
-                        ${site.url}
-                    </a>
+                <div class="border border-stone-800 p-4 hover:border-green-800">
+                    <div class="text-green-400 font-bold text-xs mb-1">SCP-LINK-${i + 1}</div>
+                    <div class="text-white mb-1">${site.name}</div>
+                    <a href="${site.url}" target="_blank" class="text-blue-400 text-sm underline break-all">${site.url}</a>
                     <div class="mt-2 text-sm text-stone-400 italic">${site.reason}</div>
                 </div>
             `).join('')}
@@ -128,6 +102,3 @@ function renderResults(data) {
 }
 
 analyzeBtn.addEventListener('click', analyzeSite);
-urlInput.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') analyzeSite();
-});
