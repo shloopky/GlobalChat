@@ -1,1 +1,498 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ANOMALY DETECTION SYSTEM</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
+        body {
+            font-family: 'Courier New', monospace;
+            background: #0a0a0a;
+            color: #00ff00;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* CRT Effect */
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                repeating-linear-gradient(
+                    0deg,
+                    rgba(0, 0, 0, 0.15),
+                    rgba(0, 0, 0, 0.15) 1px,
+                    transparent 1px,
+                    transparent 2px
+                );
+            pointer-events: none;
+            z-index: 1000;
+            animation: flicker 0.15s infinite;
+        }
+
+        body::after {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(ellipse at center, transparent 0%, rgba(0, 0, 0, 0.7) 100%);
+            pointer-events: none;
+            z-index: 999;
+        }
+
+        @keyframes flicker {
+            0% { opacity: 0.97; }
+            50% { opacity: 0.99; }
+            100% { opacity: 0.98; }
+        }
+
+        @keyframes scanline {
+            0% { transform: translateY(-100%); }
+            100% { transform: translateY(100vh); }
+        }
+
+        .scanline {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 20px;
+            background: linear-gradient(transparent, rgba(0, 255, 0, 0.1), transparent);
+            animation: scanline 8s linear infinite;
+            z-index: 998;
+            pointer-events: none;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .machine-photo {
+            width: 100%;
+            height: 400px;
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+            border: 3px solid #333;
+            margin-bottom: 30px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: inset 0 0 50px rgba(0, 0, 0, 0.8);
+        }
+
+        .machine-photo img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            filter: contrast(1.2) brightness(0.7) grayscale(0.3);
+            opacity: 0.85;
+        }
+
+        .warning-tape {
+            position: absolute;
+            width: 100%;
+            background: repeating-linear-gradient(
+                45deg,
+                #ffcc00,
+                #ffcc00 20px,
+                #000 20px,
+                #000 40px
+            );
+            height: 30px;
+            top: 20px;
+            opacity: 0.7;
+            transform: rotate(-2deg);
+        }
+
+        .warning-text {
+            text-align: center;
+            color: #ff0000;
+            font-size: 12px;
+            letter-spacing: 3px;
+            margin-bottom: 20px;
+            text-shadow: 0 0 10px #ff0000;
+            animation: flicker 0.3s infinite alternate;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 28px;
+            margin-bottom: 10px;
+            color: #00ff00;
+            text-shadow: 0 0 20px #00ff00;
+            letter-spacing: 4px;
+        }
+
+        .panel {
+            background: rgba(20, 20, 20, 0.9);
+            border: 2px solid #00ff00;
+            padding: 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 0 30px rgba(0, 255, 0, 0.3), inset 0 0 20px rgba(0, 0, 0, 0.5);
+        }
+
+        label {
+            display: block;
+            margin-bottom: 10px;
+            font-size: 14px;
+            color: #00ff00;
+            text-transform: uppercase;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 15px;
+            background: #000;
+            border: 2px solid #00ff00;
+            color: #00ff00;
+            font-family: 'Courier New', monospace;
+            font-size: 16px;
+            margin-bottom: 20px;
+            box-shadow: inset 0 0 10px rgba(0, 255, 0, 0.2);
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.5), inset 0 0 10px rgba(0, 255, 0, 0.2);
+        }
+
+        .knob-container {
+            text-align: center;
+            margin: 30px 0;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid #333;
+        }
+
+        .knob {
+            width: 150px;
+            height: 150px;
+            margin: 20px auto;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, #444, #111);
+            border: 5px solid #222;
+            position: relative;
+            cursor: pointer;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8), inset 0 0 20px rgba(0, 0, 0, 0.5);
+        }
+
+        .knob-indicator {
+            position: absolute;
+            width: 4px;
+            height: 60px;
+            background: #ff0000;
+            top: 10px;
+            left: 50%;
+            transform-origin: bottom center;
+            transform: translateX(-50%);
+            box-shadow: 0 0 10px #ff0000;
+        }
+
+        .danger-label {
+            text-align: center;
+            font-size: 18px;
+            color: #ff0000;
+            text-shadow: 0 0 10px #ff0000;
+            margin-top: 10px;
+        }
+
+        button {
+            width: 100%;
+            padding: 20px;
+            background: #001a00;
+            border: 3px solid #00ff00;
+            color: #00ff00;
+            font-family: 'Courier New', monospace;
+            font-size: 18px;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            transition: all 0.3s;
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.3);
+        }
+
+        button:hover {
+            background: #003300;
+            box-shadow: 0 0 40px rgba(0, 255, 0, 0.6);
+        }
+
+        button:active {
+            transform: scale(0.98);
+        }
+
+        .analyzing {
+            background: #1a0000 !important;
+            border-color: #ff0000 !important;
+            color: #ff0000 !important;
+            animation: pulse 0.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 0 20px rgba(255, 0, 0, 0.3); }
+            50% { box-shadow: 0 0 40px rgba(255, 0, 0, 0.8); }
+        }
+
+        .results {
+            margin-top: 30px;
+        }
+
+        .result-item {
+            background: rgba(0, 20, 0, 0.8);
+            border: 1px solid #00ff00;
+            padding: 20px;
+            margin-bottom: 15px;
+            box-shadow: 0 0 15px rgba(0, 255, 0, 0.2);
+        }
+
+        .result-item h3 {
+            color: #00ff00;
+            margin-bottom: 10px;
+            text-shadow: 0 0 10px #00ff00;
+        }
+
+        .result-item a {
+            color: #00cc00;
+            text-decoration: none;
+            word-break: break-all;
+        }
+
+        .result-item a:hover {
+            color: #00ff00;
+            text-shadow: 0 0 5px #00ff00;
+        }
+
+        .result-item p {
+            margin-top: 10px;
+            color: #00dd00;
+            font-size: 14px;
+        }
+
+        .glitch {
+            animation: glitch 0.3s infinite;
+        }
+
+        @keyframes glitch {
+            0% { transform: translate(0); }
+            20% { transform: translate(-2px, 2px); }
+            40% { transform: translate(-2px, -2px); }
+            60% { transform: translate(2px, 2px); }
+            80% { transform: translate(2px, -2px); }
+            100% { transform: translate(0); }
+        }
+
+        .static-noise {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAFCAYAAACNbyblAAAADElEQVQImWNgoBMAAABpAAFEI8ARAAAAAElFTkSuQmCC');
+            opacity: 0.03;
+            pointer-events: none;
+            z-index: 997;
+            animation: static 0.1s infinite;
+        }
+
+        @keyframes static {
+            0% { transform: translate(0, 0); }
+            10% { transform: translate(-5px, -5px); }
+            20% { transform: translate(-10px, 5px); }
+            30% { transform: translate(5px, -10px); }
+            40% { transform: translate(-5px, 15px); }
+            50% { transform: translate(-10px, 5px); }
+            60% { transform: translate(15px, 0); }
+            70% { transform: translate(0, 10px); }
+            80% { transform: translate(-15px, 0); }
+            90% { transform: translate(10px, 5px); }
+            100% { transform: translate(5px, 0); }
+        }
+    </style>
+</head>
+<body>
+    <div class="scanline"></div>
+    <div class="static-noise"></div>
+    
+    <div class="container">
+        <div class="warning-text">⚠ UNAUTHORIZED ACCESS DETECTED ⚠</div>
+        
+        <div class="machine-photo">
+            <div class="warning-tape"></div>
+            <svg width="100%" height="100%" style="position: absolute; top: 0; left: 0;">
+                <!-- Simulated vintage computer/machine imagery -->
+                <rect width="100%" height="100%" fill="#1a1a1a"/>
+                <circle cx="200" cy="200" r="80" fill="#333" opacity="0.5"/>
+                <circle cx="200" cy="200" r="60" fill="#222" opacity="0.7"/>
+                <rect x="350" y="150" width="200" height="100" fill="#2a2a2a" opacity="0.6"/>
+                <rect x="370" y="170" width="30" height="60" fill="#444" opacity="0.8"/>
+                <rect x="420" y="170" width="30" height="60" fill="#444" opacity="0.8"/>
+                <rect x="470" y="170" width="30" height="60" fill="#444" opacity="0.8"/>
+                <line x1="100" y1="350" x2="900" y2="350" stroke="#333" stroke-width="3"/>
+                <text x="50%" y="380" text-anchor="middle" fill="#666" font-size="12" font-family="monospace">APPARATUS MODEL: ADS-7743</text>
+            </svg>
+        </div>
+
+        <h1>ANOMALY DETECTION SYSTEM</h1>
+        <div class="warning-text" style="font-size: 10px;">CLEARANCE LEVEL: RESTRICTED</div>
+
+        <div class="panel">
+            <label>◈ INPUT TARGET URL</label>
+            <input type="text" id="urlInput" placeholder="https://..." />
+
+            <div class="knob-container">
+                <label>◈ DANGER THRESHOLD</label>
+                <div class="knob" id="knob">
+                    <div class="knob-indicator" id="indicator"></div>
+                </div>
+                <div class="danger-label" id="dangerLabel">LEVEL 2 - MODERATE</div>
+                <div style="font-size: 11px; color: #888; margin-top: 10px;">ROTATE TO ADJUST INTENSITY</div>
+            </div>
+
+            <button id="analyzeBtn">INITIATE SCAN</button>
+        </div>
+
+        <div class="results" id="results"></div>
+    </div>
+
+    <script>
+        let dangerLevel = 2;
+        const knob = document.getElementById('knob');
+        const indicator = document.getElementById('indicator');
+        const dangerLabel = document.getElementById('dangerLabel');
+        const urlInput = document.getElementById('urlInput');
+        const analyzeBtn = document.getElementById('analyzeBtn');
+        const results = document.getElementById('results');
+
+        const labels = [
+            'LEVEL 0 - SAFE',
+            'LEVEL 1 - CAUTION',
+            'LEVEL 2 - MODERATE',
+            'LEVEL 3 - ELEVATED',
+            'LEVEL 4 - CRITICAL'
+        ];
+
+        let isDragging = false;
+
+        knob.addEventListener('mousedown', (e) => {
+            isDragging = true;
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (isDragging) {
+                const rect = knob.getBoundingClientRect();
+                const centerX = rect.left + rect.width / 2;
+                const centerY = rect.top + rect.height / 2;
+                const angle = Math.atan2(e.clientY - centerY, e.clientX - centerX);
+                let degrees = angle * (180 / Math.PI) + 90;
+                if (degrees < 0) degrees += 360;
+                
+                dangerLevel = Math.floor((degrees / 360) * 5);
+                if (dangerLevel > 4) dangerLevel = 4;
+                
+                indicator.style.transform = `translateX(-50%) rotate(${(dangerLevel / 4) * 270 - 135}deg)`;
+                dangerLabel.textContent = labels[dangerLevel];
+            }
+        });
+
+        document.addEventListener('mouseup', () => {
+            isDragging = false;
+        });
+
+        analyzeBtn.addEventListener('click', async () => {
+            const url = urlInput.value.trim();
+            if (!url) {
+                alert('ERROR: NO URL PROVIDED');
+                return;
+            }
+
+            analyzeBtn.textContent = '◈ ANALYZING ◈';
+            analyzeBtn.classList.add('analyzing');
+            results.innerHTML = '<div class="glitch" style="text-align: center; padding: 40px;">SCANNING...</div>';
+
+            try {
+                const response = await fetch("https://api.anthropic.com/v1/messages", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        model: "claude-sonnet-4-20250514",
+                        max_tokens: 1000,
+                        messages: [{
+                            role: "user",
+                            content: `Given this URL: "${url}", suggest 3 similar websites or online experiences.
+                            
+Danger level: ${dangerLevel}/4 (0=safe/mainstream, 4=edgy/experimental/dark)
+
+Respond ONLY with valid JSON, no other text:
+{
+  "sites": [
+    {"name": "Site Name", "url": "https://example.com", "description": "Why it's similar"},
+    {"name": "Site Name", "url": "https://example.com", "description": "Why it's similar"},
+    {"name": "Site Name", "url": "https://example.com", "description": "Why it's similar"}
+  ],
+  "classification": "Brief category",
+  "warning": "Any warnings or notes"
+}
+
+Higher danger levels should yield more unconventional, edgy, or experimental suggestions.`
+                        }]
+                    })
+                });
+
+                const data = await response.json();
+                const text = data.content.map(i => i.text || "").join("\n").trim();
+                const clean = text.replace(/```json|```/g, "").trim();
+                const parsed = JSON.parse(clean);
+
+                displayResults(parsed);
+            } catch (err) {
+                results.innerHTML = '<div class="result-item"><h3>ERROR</h3><p>Analysis failed. Check URL format.</p></div>';
+            }
+
+            analyzeBtn.textContent = 'INITIATE SCAN';
+            analyzeBtn.classList.remove('analyzing');
+        });
+
+        function displayResults(data) {
+            let html = `
+                <div class="panel">
+                    <div style="margin-bottom: 20px;">
+                        <div style="font-size: 12px; color: #888;">CLASSIFICATION:</div>
+                        <div style="font-size: 18px; color: #00ff00; text-shadow: 0 0 10px #00ff00;">${data.classification}</div>
+                    </div>
+                    ${data.warning ? `<div style="border: 1px solid #ff0000; padding: 10px; margin-bottom: 20px; color: #ff0000;">⚠ ${data.warning}</div>` : ''}
+                </div>
+            `;
+
+            data.sites.forEach((site, i) => {
+                html += `
+                    <div class="result-item">
+                        <h3>ANOMALY ${i + 1}: ${site.name}</h3>
+                        <a href="${site.url}" target="_blank">${site.url}</a>
+                        <p>${site.description}</p>
+                    </div>
+                `;
+            });
+
+            results.innerHTML = html;
+        }
+
+        // Set initial knob position
+        indicator.style.transform = `translateX(-50%) rotate(${(dangerLevel / 4) * 270 - 135}deg)`;
+    </script>
+</body>
+</html>
