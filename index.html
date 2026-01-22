@@ -3,109 +3,458 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SCP Link Analyzer</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/lucide@latest"></script>
+    <title>🕷️ ScaryLink Finder 🕷️</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap');
-        
-        body { font-family: 'Space Mono', monospace; }
-
-        .scanline-container {
-            pointer-events: none;
-            position: fixed;
-            inset: 0;
-            opacity: 0.3;
-            display: none;
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
 
-        .scanline {
-            height: 4px;
-            background: rgba(34, 197, 94, 0.1);
-            margin-bottom: 2px;
-            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        body {
+            background: #000;
+            font-family: 'Courier New', monospace;
+            color: #0f0;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: repeating-linear-gradient(
+                0deg,
+                rgba(0, 255, 0, 0.03) 0px,
+                transparent 1px,
+                transparent 2px,
+                rgba(0, 255, 0, 0.03) 3px
+            );
+            pointer-events: none;
+            z-index: 1000;
+            animation: scanlines 8s linear infinite;
+        }
+
+        @keyframes scanlines {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(10px); }
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            text-align: center;
+            padding: 30px 0;
+            border: 3px solid #0f0;
+            background: #001a00;
+            margin-bottom: 30px;
+            box-shadow: 0 0 20px #0f0, inset 0 0 20px rgba(0, 255, 0, 0.3);
+            animation: flicker 3s infinite;
+        }
+
+        @keyframes flicker {
+            0%, 100% { opacity: 1; }
+            41%, 42%, 43% { opacity: 0.8; }
+        }
+
+        h1 {
+            font-size: 3em;
+            text-shadow: 0 0 10px #0f0, 0 0 20px #0f0;
+            letter-spacing: 3px;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #ff0000;
+            font-size: 1.2em;
+            text-shadow: 0 0 10px #ff0000;
+            animation: pulse 2s infinite;
         }
 
         @keyframes pulse {
             0%, 100% { opacity: 1; }
-            50% { opacity: .5; }
+            50% { opacity: 0.6; }
         }
 
-        input[type=range] {
-            -webkit-appearance: none;
+        .warning-banner {
+            background: #ff0000;
+            color: #000;
+            padding: 10px;
+            text-align: center;
+            font-weight: bold;
+            margin-bottom: 20px;
+            border: 2px solid #fff;
+            animation: blink 1s infinite;
+        }
+
+        @keyframes blink {
+            0%, 49% { opacity: 1; }
+            50%, 100% { opacity: 0.7; }
+        }
+
+        .input-section {
+            background: #001a00;
+            border: 2px solid #0f0;
+            padding: 20px;
+            margin-bottom: 30px;
+            box-shadow: 0 0 15px rgba(0, 255, 0, 0.5);
+        }
+
+        label {
+            display: block;
+            margin-bottom: 10px;
+            font-size: 1.2em;
+            text-shadow: 0 0 5px #0f0;
+        }
+
+        input[type="text"] {
             width: 100%;
-            height: 12px;
-            background: #292524;
-            cursor: pointer;
+            padding: 12px;
+            background: #000;
+            border: 2px solid #0f0;
+            color: #0f0;
+            font-family: 'Courier New', monospace;
+            font-size: 1em;
+            margin-bottom: 20px;
         }
 
-        input[type=range]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            height: 24px;
-            width: 12px;
-            background: #ffffff;
-            border: 2px solid #000;
+        input[type="text"]:focus {
+            outline: none;
+            box-shadow: 0 0 10px #0f0;
+        }
+
+        .knob-container {
+            text-align: center;
+            padding: 30px;
+            background: #000;
+            border: 3px solid #ff0000;
+            margin-bottom: 20px;
+            box-shadow: 0 0 20px rgba(255, 0, 0, 0.5);
+        }
+
+        .knob-label {
+            font-size: 1.5em;
+            color: #ff0000;
+            text-shadow: 0 0 10px #ff0000;
+            margin-bottom: 20px;
+        }
+
+        .knob-wrapper {
+            display: inline-block;
+            position: relative;
+        }
+
+        .knob {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            background: linear-gradient(145deg, #1a1a1a, #000);
+            border: 5px solid #333;
+            position: relative;
+            cursor: pointer;
+            box-shadow: 
+                0 5px 15px rgba(0, 0, 0, 0.8),
+                inset 0 -5px 10px rgba(0, 0, 0, 0.5),
+                inset 0 5px 10px rgba(255, 255, 255, 0.1);
+        }
+
+        .knob-indicator {
+            position: absolute;
+            top: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 4px;
+            height: 40px;
+            background: #ff0000;
+            box-shadow: 0 0 10px #ff0000;
+            transform-origin: bottom center;
+        }
+
+        .knob-center {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: #000;
+            border: 2px solid #666;
+        }
+
+        .scale {
+            margin-top: 20px;
+            font-size: 1.2em;
+        }
+
+        .scale-value {
+            color: #ff0000;
+            font-size: 2em;
+            text-shadow: 0 0 10px #ff0000;
+            font-weight: bold;
+        }
+
+        button {
+            background: #0f0;
+            color: #000;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.2em;
+            font-family: 'Courier New', monospace;
+            cursor: pointer;
+            font-weight: bold;
+            text-transform: uppercase;
+            box-shadow: 0 0 15px #0f0;
+            transition: all 0.3s;
+        }
+
+        button:hover {
+            background: #00ff00;
+            box-shadow: 0 0 25px #0f0;
+            transform: scale(1.05);
+        }
+
+        button:active {
+            transform: scale(0.95);
+        }
+
+        .results {
+            background: #001a00;
+            border: 2px solid #0f0;
+            padding: 20px;
+            margin-top: 30px;
+            box-shadow: 0 0 15px rgba(0, 255, 0, 0.5);
+            display: none;
+        }
+
+        .result-item {
+            background: #000;
+            border: 1px solid #0f0;
+            padding: 15px;
+            margin-bottom: 15px;
+            transition: all 0.3s;
+        }
+
+        .result-item:hover {
+            background: #001a00;
+            box-shadow: 0 0 10px #0f0;
+        }
+
+        .result-link {
+            color: #0f0;
+            text-decoration: none;
+            word-break: break-all;
+            font-size: 1.1em;
+        }
+
+        .result-link:hover {
+            text-decoration: underline;
+            text-shadow: 0 0 5px #0f0;
+        }
+
+        .loading {
+            text-align: center;
+            color: #ff0000;
+            font-size: 1.5em;
+            animation: pulse 1s infinite;
+            display: none;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 50px;
+            padding: 20px;
+            border-top: 2px solid #0f0;
+            color: #0f0;
+            opacity: 0.7;
         }
     </style>
 </head>
-<body class="min-h-screen bg-stone-900 text-stone-200 p-8 relative overflow-x-hidden">
+<body>
+    <div class="container">
+        <header>
+            <h1>🕷️ SCARYLINK FINDER 🕷️</h1>
+            <div class="subtitle">⚠️ FIND THE DARKEST CORNERS OF THE WEB ⚠️</div>
+        </header>
 
-    <div class="fixed inset-0 pointer-events-none bg-gradient-to-b from-transparent via-stone-900/5 to-transparent opacity-20"></div>
-    
-    <div id="scanlines" class="scanline-container">
+        <div class="warning-banner">
+            ⚠️ WARNING: ENTERING DANGEROUS TERRITORY ⚠️
         </div>
 
-    <div class="max-w-4xl mx-auto relative z-10">
-        <div class="border-4 border-red-900 bg-black p-6 mb-8 shadow-2xl">
-            <div class="flex items-center justify-between mb-2">
-                <h1 class="text-3xl font-bold text-red-500 tracking-wider">SCP-████</h1>
-                <i data-lucide="alert-triangle" class="text-yellow-400 animate-pulse w-8 h-8"></i>
-            </div>
-            <h2 class="text-xl text-stone-400">LINK ANALYSIS APPARATUS</h2>
-            <div class="mt-2 text-xs text-stone-500">
-                ███████ Foundation | Clearance Level: ████
-            </div>
-        </div>
-
-        <div class="border-2 border-stone-700 bg-stone-950 p-8 shadow-2xl">
-            <div class="mb-6">
-                <label class="block text-sm font-bold mb-2 text-green-400">TARGET URL FOR ANALYSIS</label>
-                <input type="text" id="urlInput" placeholder="https://example.com" 
-                       class="w-full bg-black border-2 border-green-800 text-green-400 px-4 py-3 focus:outline-none focus:border-green-500 font-mono">
-            </div>
-
-            <div class="mb-8 p-6 border-2 border-yellow-900 bg-stone-900">
-                <div class="flex items-center justify-between mb-4">
-                    <label class="text-sm font-bold text-yellow-400 flex items-center gap-2">
-                        <i data-lucide="zap" class="w-5 h-5"></i>
-                        CONTAINMENT BREACH PROBABILITY
-                    </label>
-                    <span id="dangerLabel" class="text-2xl font-bold text-yellow-400">EUCLID</span>
+        <div class="input-section">
+            <label for="urlInput">ENTER URL TO MAKE SCARIER:</label>
+            <input type="text" id="urlInput" placeholder="https://example.com">
+            
+            <div class="knob-container">
+                <div class="knob-label">SCARY LEVEL CONTROL</div>
+                <div class="knob-wrapper">
+                    <div class="knob" id="knob">
+                        <div class="knob-indicator" id="indicator"></div>
+                        <div class="knob-center"></div>
+                    </div>
                 </div>
-                
-                <input type="range" id="dangerRange" min="0" max="4" value="2">
-                
-                <div class="flex justify-between mt-2 text-xs text-stone-500">
-                    <span>SAFE</span><span>EUCLID</span><span>KETER</span><span>THAUMIEL</span><span>APOLLYON</span>
+                <div class="scale">
+                    FEAR LEVEL: <span class="scale-value" id="scaleValue">0</span>/10
                 </div>
-                
-                <div id="dangerDesc" class="mt-3 text-sm text-stone-400 italic">Slightly quirky</div>
             </div>
 
-            <button id="analyzeBtn" class="w-full py-4 font-bold text-xl tracking-wider transition-all bg-red-800 text-white hover:bg-red-700 border-2 border-red-950">
-                INITIATE ANALYSIS
-            </button>
+            <button onclick="findScaryLinks()">GENERATE SCARY LINKS</button>
         </div>
 
-        <div id="resultsArea" class="hidden mt-8 border-2 border-stone-700 bg-black p-6 shadow-2xl">
-            </div>
-
-        <div class="mt-8 text-center text-xs text-stone-600">
-            <p>WARNING: Unauthorized use of this apparatus is strictly prohibited</p>
-            <p class="mt-1">Foundation Security Clearance Required | Document #████-█-████</p>
+        <div class="loading" id="loading">
+            SCANNING DARK WEB... 👻
         </div>
+
+        <div class="results" id="results"></div>
+
+        <footer>
+            © 2000 ScaryLink Finder | Best viewed in Internet Explorer 5.0<br>
+            <small>Enter at your own risk...</small>
+        </footer>
     </div>
 
-    <script src="script.js"></script>
+    <script>
+        let scaryLevel = 0;
+        let isDragging = false;
+        const knob = document.getElementById('knob');
+        const indicator = document.getElementById('indicator');
+        const scaleValue = document.getElementById('scaleValue');
+
+        function updateKnob(angle) {
+            const normalizedAngle = Math.max(-135, Math.min(135, angle));
+            const level = Math.round(((normalizedAngle + 135) / 270) * 10);
+            scaryLevel = level;
+            scaleValue.textContent = level;
+            indicator.style.transform = `translateX(-50%) rotate(${normalizedAngle}deg)`;
+        }
+
+        knob.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            updateKnobFromMouse(e);
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (isDragging) {
+                updateKnobFromMouse(e);
+            }
+        });
+
+        document.addEventListener('mouseup', () => {
+            isDragging = false;
+        });
+
+        knob.addEventListener('touchstart', (e) => {
+            isDragging = true;
+            updateKnobFromTouch(e);
+        });
+
+        document.addEventListener('touchmove', (e) => {
+            if (isDragging) {
+                updateKnobFromTouch(e);
+            }
+        });
+
+        document.addEventListener('touchend', () => {
+            isDragging = false;
+        });
+
+        function updateKnobFromMouse(e) {
+            const rect = knob.getBoundingClientRect();
+            const centerX = rect.left + rect.width / 2;
+            const centerY = rect.top + rect.height / 2;
+            const angle = Math.atan2(e.clientY - centerY, e.clientX - centerX) * (180 / Math.PI) + 90;
+            updateKnob(angle);
+        }
+
+        function updateKnobFromTouch(e) {
+            const touch = e.touches[0];
+            const rect = knob.getBoundingClientRect();
+            const centerX = rect.left + rect.width / 2;
+            const centerY = rect.top + rect.height / 2;
+            const angle = Math.atan2(touch.clientY - centerY, touch.clientX - centerX) * (180 / Math.PI) + 90;
+            updateKnob(angle);
+        }
+
+        async function findScaryLinks() {
+            const urlInput = document.getElementById('urlInput').value.trim();
+            const resultsDiv = document.getElementById('results');
+            const loading = document.getElementById('loading');
+
+            if (!urlInput) {
+                alert('⚠️ PLEASE ENTER A URL!');
+                return;
+            }
+
+            loading.style.display = 'block';
+            resultsDiv.style.display = 'none';
+
+            // Simulate processing time
+            await new Promise(resolve => setTimeout(resolve, 2000));
+
+            loading.style.display = 'none';
+            resultsDiv.style.display = 'block';
+
+            const scaryVariations = generateScaryVariations(urlInput, scaryLevel);
+            
+            resultsDiv.innerHTML = `
+                <h2 style="color: #ff0000; text-shadow: 0 0 10px #ff0000; margin-bottom: 20px;">
+                    🕸️ SCARY VARIATIONS (LEVEL ${scaryLevel}) 🕸️
+                </h2>
+                ${scaryVariations.map(variation => `
+                    <div class="result-item">
+                        <strong style="color: #ff0000;">THREAT LEVEL ${variation.level}/10:</strong><br>
+                        <a href="${variation.url}" class="result-link" target="_blank">${variation.url}</a><br>
+                        <small style="color: #888;">${variation.description}</small>
+                    </div>
+                `).join('')}
+            `;
+        }
+
+        function generateScaryVariations(url, level) {
+            const variations = [];
+            let baseUrl = url.replace(/^https?:\/\//, '');
+            
+            const scaryPrefixes = ['dark', 'deep', 'hidden', 'shadow', 'cursed', 'haunted', 'forbidden', 'evil', 'nightmare', 'terror'];
+            const scarySuffixes = ['666', 'hell', 'abyss', 'void', 'darkness', 'doom', 'death', 'grave', 'crypt', 'demon'];
+            const scaryDomains = ['.onion', '.dark', '.hell', '.nightmare', '.shadow', '.void', '.cursed', '.haunted', '.666', '.evil'];
+
+            for (let i = 1; i <= level; i++) {
+                const intensity = Math.ceil(i / 2);
+                let scaryUrl = baseUrl;
+                
+                if (i <= 3) {
+                    scaryUrl = scaryPrefixes[i % scaryPrefixes.length] + '-' + baseUrl;
+                    variations.push({
+                        level: i,
+                        url: 'https://' + scaryUrl,
+                        description: 'Slightly darker version with mysterious prefix'
+                    });
+                } else if (i <= 6) {
+                    scaryUrl = scaryPrefixes[i % scaryPrefixes.length] + '.' + baseUrl.replace(/\.(com|net|org)/, scarySuffixes[i % scarySuffixes.length] + '.onion');
+                    variations.push({
+                        level: i,
+                        url: 'https://' + scaryUrl,
+                        description: 'Deep web variant - requires Tor browser'
+                    });
+                } else {
+                    scaryUrl = scarySuffixes[i % scarySuffixes.length] + '.' + scaryPrefixes[i % scaryPrefixes.length] + '.' + baseUrl.split('.')[0] + scaryDomains[i % scaryDomains.length];
+                    variations.push({
+                        level: i,
+                        url: 'https://' + scaryUrl,
+                        description: '⚠️ EXTREME DANGER - Enter at your own risk ⚠️'
+                    });
+                }
+            }
+
+            return variations;
+        }
+    </script>
 </body>
 </html>
